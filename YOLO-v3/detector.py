@@ -159,6 +159,7 @@ for i, batch in enumerate(im_batches):
     prediction = model(batch.detach(), CUDA)
     # print(prediction.shape)  # torch.Size([1, 10647, 85])
     prediction = write_results(prediction, confidence, num_classes, nms_conf = nms_thesh)
+    # it defined in util.py, the function output is like follow :
     # [ID,box_left, box_top, box_right, box_down, box_conf, max_class_score, max_class_score_index]
     # for every row
 
@@ -168,18 +169,18 @@ for i, batch in enumerate(im_batches):
         # 1 indicator the image index in current batch 
         (1, box_left, box_top, box_right, box_down, box_conf, max_class_score, max_class_score_index)
         
-          ...... some  rows notice rows not the 3*(13*13+26*26+52*52),
+          ...... some rows ,notice rows not the 3*(13*13+26*26+52*52),
           because we has filter some box 
                           
         (2, box_left, box_top, box_right, box_down, box_conf, max_class_score, max_class_score_index)
         (2, box_left, box_top, box_right, box_down, box_conf, max_class_score, max_class_score_index)  
         
-          ...... some  rows notice rows not the 3*(13*13+26*26+52*52),
+          ...... some rows ,notice rows not the 3*(13*13+26*26+52*52),
           because we has filter some box 
                           
         (64,box_left, box_top, box_right, box_down, box_conf, max_class_score, max_class_score_index)
         
-          ...... some  rows notice rows not the 3*(13*13+26*26+52*52),
+          ...... some rows ,notice rows not the 3*(13*13+26*26+52*52),
           because we has filter some box 
         
     '''
@@ -304,8 +305,8 @@ output[:,[2,4]] -= (inp_dim - scaling_factor*im_dim_list[:,1].view(-1,1))/2
                 *  -  -  -  -  * 
                 *  *  *  *  *  *
 这里中间0是原图像经过乘一个scaling factor（比如1/4），其余*号为padding，
-假设这里预测有一个框，那么对于网络，由于传入的padding 的image，那么输出的
-prediction 会显示框的对角坐标 ，但事实上在 经过 resize 的image上，真实的
+假设这里预测有一个框，由于传入CNN的是经过 padding 的image，那么
+prediction 的框的对角坐标 ，是对应到padding image 的，因此真实的
 框对角坐标，需要将现有坐标减去左边界和上边界即可
 (因为之前保证了图片在convas的正中心)
 
