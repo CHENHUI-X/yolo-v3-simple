@@ -102,59 +102,65 @@ assert cap.isOpened(), 'Cannot capture source'
 
 frames = 0
 start = time.time()
+c =  1
+next_frames = 30
 
 while cap.isOpened():
     ret, frame = cap.read()
 
     if ret:
-        img = prep_image(frame, inp_dim)
-        #        cv2.imshow("a", frame)
-        im_dim = frame.shape[1], frame.shape[0]
-        im_dim = torch.FloatTensor(im_dim).repeat(1, 2)
+        if (c % next_frames == 0):
+            # img = prep_image(frame, inp_dim)
+            img = letterbox_image(frame, inp_dim)
+            #        cv2.imshow("a", frame)
+            im_dim = frame.shape[1], frame.shape[0]
+            im_dim = torch.FloatTensor(im_dim).repeat(1, 2)
 
-        if CUDA:
-            im_dim = im_dim.cuda()
-            img = img.cuda()
+            if CUDA:
+                im_dim = im_dim.cuda()
+                img = img.cuda()
 
-        with torch.no_grad():
-            output = model(Variable(img, volatile=True), CUDA)
-        output = write_results(output, confidence, num_classes, nms_conf=nms_thesh)
+            with torch.no_grad():
+                output = model(Variable(img, volatile=True), CUDA)
+            output = write_results(output, confidence, num_classes, nms_conf=nms_thesh)
 
-        if type(output) == int:
-            frames += 1
-            print("FPS of the video is {:5.4f}".format(frames / (time.time() - start)))
+            if type(output) == int:
+                frames += 1
+                print("FPS of the video is {:5.4f}".format(frames / (time.time() - start)))
+                cv2.imshow("frame", frame)
+                key = cv2.waitKey(1)
+                if key & 0xFF == ord('q'):
+                    break
+                continue
+
+            im_dim = im_dim.repeat(output.size(0), 1)
+            scaling_factor = torch.min(416 / im_dim, 1)[0].view(-1, 1)
+
+            output[:, [1, 3]] -= (inp_dim - scaling_factor * im_dim[:, 0].view(-1, 1)) / 2
+            output[:, [2, 4]] -= (inp_dim - scaling_factor * im_dim[:, 1].view(-1, 1)) / 2
+
+            output[:, 1:5] /= scaling_factor
+
+            for i in range(output.shape[0]):
+                output[i, [1, 3]] = torch.clamp(output[i, [1, 3]], 0.0, im_dim[i, 0])
+                output[i, [2, 4]] = torch.clamp(output[i, [2, 4]], 0.0, im_dim[i, 1])
+
+            classes = load_classes('data/coco.names')
+            colors = pkl.load(open("pallete", "rb"))
+
+            list(map(lambda x: write(x, frame, random.choice(colors)), output))
+
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
             if key & 0xFF == ord('q'):
                 break
-            continue
-
-        im_dim = im_dim.repeat(output.size(0), 1)
-        scaling_factor = torch.min(416 / im_dim, 1)[0].view(-1, 1)
-
-        output[:, [1, 3]] -= (inp_dim - scaling_factor * im_dim[:, 0].view(-1, 1)) / 2
-        output[:, [2, 4]] -= (inp_dim - scaling_factor * im_dim[:, 1].view(-1, 1)) / 2
-
-        output[:, 1:5] /= scaling_factor
-
-        for i in range(output.shape[0]):
-            output[i, [1, 3]] = torch.clamp(output[i, [1, 3]], 0.0, im_dim[i, 0])
-            output[i, [2, 4]] = torch.clamp(output[i, [2, 4]], 0.0, im_dim[i, 1])
-
-        classes = load_classes('data/coco.names')
-        colors = pkl.load(open("pallete", "rb"))
-
-        list(map(lambda x: write(x, frame, random.choice(colors)), output))
-
-        cv2.imshow("frame", frame)
-        key = cv2.waitKey(1)
-        if key & 0xFF == ord('q'):
-            break
-        frames += 1
-        print(time.time() - start)
-        print("FPS of the video is {:5.2f}".format(frames / (time.time() - start)))
+            frames += 1
+            print(time.time() - start)
+            print("FPS of the video is {:5.2f}".format(frames / (time.time() - start)))
+        c += 1
     else:
         break
+
 
 
 
