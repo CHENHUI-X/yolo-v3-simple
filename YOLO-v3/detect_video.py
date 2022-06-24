@@ -23,8 +23,8 @@ def arg_parse():
 
     parser = argparse.ArgumentParser(description='YOLO v3 Detection Module')
     parser.add_argument("--bs", dest="bs", help="Batch size", default=1)
-    parser.add_argument("--confidence", dest="confidence", help="Object Confidence to filter predictions", default=0.5)
-    parser.add_argument("--nms_thresh", dest="nms_thresh", help="NMS Threshhold", default=0.4)
+    parser.add_argument("--confidence", dest="confidence", help="Object Confidence to filter predictions", default = 0.5)
+    parser.add_argument("--nms_thresh", dest="nms_thresh", help="NMS Threshhold", default = 0.4 )
     parser.add_argument("--cfg", dest='cfgfile', help=
     "Config file",
                         default="cfg/yolov3.cfg", type=str)
@@ -121,10 +121,9 @@ while cap.isOpened():
                 img = img.cuda()
 
             with torch.no_grad():
-                output = model(Variable(img, volatile=True), CUDA)
-            output = write_results(output, confidence, num_classes, nms_conf=nms_thesh)
+                output = model(img, CUDA)
 
-            if type(output) == int:
+            if type(output) == int: # no objedt
                 frames += 1
                 print("FPS of the video is {:5.4f}".format(frames / (time.time() - start)))
                 cv2.imshow("frame", frame)
@@ -132,6 +131,8 @@ while cap.isOpened():
                 if key & 0xFF == ord('q'):
                     break
                 continue
+
+            output = write_results(output, confidence, num_classes, nms_conf=nms_thesh)
 
             im_dim = im_dim.repeat(output.size(0), 1)
             scaling_factor = torch.min(416 / im_dim, 1)[0].view(-1, 1)
@@ -148,7 +149,8 @@ while cap.isOpened():
             classes = load_classes('data/coco.names')
             colors = pkl.load(open("pallete", "rb"))
 
-            list(map(lambda x: write(x, frame, random.choice(colors)), output))
+            list(map(lambda x: write(x, [frame], random.choice(colors)), output))
+            # this syntax need the operating object is a "reference object" , such as a list
 
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
