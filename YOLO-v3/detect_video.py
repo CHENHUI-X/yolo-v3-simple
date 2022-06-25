@@ -15,6 +15,8 @@ import pandas as pd
 import random
 
 
+
+
 def arg_parse():
     """
     Parse arguements to the detect module
@@ -38,6 +40,7 @@ def arg_parse():
                         type=str)
 
     return parser.parse_args()
+
 
 
 def load_classes(namesfile):
@@ -72,6 +75,7 @@ if CUDA:
 
 # Set the model in evaluation mode
 model.eval()
+
 
 
 def write(x, results, color):
