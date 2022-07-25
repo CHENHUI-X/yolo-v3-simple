@@ -5,5 +5,6 @@ Implement yolo-v3 code according to the tutorial
 - 在实现过程中发现该教程部分（very little part）代码有一些问题，经过几天的摸索努力将其调通，并上传至此。
 - 虽然原作者写的很好，但是部分代码注释不细致以及上下文输入输出没有详细讲解，因此我在实现的过程中添加了非常多注释，尤其是涉及输入输出变换的过程中
 - 原作者的教程和代码，加上我的注释，希望对你有所帮助。
-- ![yolo-v3架构](https://github.com/CHENHUI-X/yolo-v3-simple/blob/master/YOLO-v3/yolo-v3%E6%9E%B6%E6%9E%84.jpg)
+- yolo-v3架构:
+  - ![~](https://github.com/CHENHUI-X/yolo-v3-simple/blob/master/YOLO-v3/yolo-v3%E6%9E%B6%E6%9E%84.jpg)
   
