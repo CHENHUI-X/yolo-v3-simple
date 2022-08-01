@@ -47,7 +47,7 @@ def arg_parse():
 
 def load_classes(namesfile):
   fp = open(namesfile, "r")
-  names = fp.read().split("\n")[:-1]
+  names = fp.read().split("\n")[:-1] # 最后多了一行空白行
   return names
 
 args = arg_parse()

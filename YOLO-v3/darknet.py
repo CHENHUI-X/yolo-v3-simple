@@ -30,8 +30,8 @@ def parse_cfg(cfgfile):
         if line[0] == "[":  # This marks the start of a new block，like [convolutional]
             if len(block) != 0:
                 # If block is not empty, implies it is storing values of previous block.
-                blocks.append(block)  # add it( last one  block ) the blocks list
-                block = {}  # re-init the block ,for  update  next  time layer
+                blocks.append(block)  # add the old  block to blocks list
+                block = {}  # re-init the block , for  update  next  time layer
 
             block["type"] = line[1:-1].rstrip() # net or rote or convolutional or upsample
         else:
@@ -80,7 +80,7 @@ def create_modules(blocks):
 
     module_list = nn.ModuleList() # element is a Sequential one by one
 
-    # we need  to  know  how many  channel(deepth) out from previous layer
+    # we need  to  know  how  many  channel(deepth) out from previous layer
     #  here previous channel  is the input image , which is 3
     prev_filters = 3
     # store   filter num  of  all  the  kernel for  route layer
@@ -146,20 +146,24 @@ def create_modules(blocks):
             # layer  = -4，means that getoutput from  previous 4 layer
             x["layers"] = x["layers"].split(',')
             # Start  of a route
-            start = int(x["layers"][0])
+            start = int(x["layers"][0]) # -1
             # like -1, 61 means concatenation them with  channel dimension
             # end, if there exists one.
             try:
-                end = int(x["layers"][1])
+                end = int(x["layers"][1]) # 61
             except:
                 end = 0
             # Positive anotation
             if start > 0:
-                start = start - index # index : current layer
+                start = start - index # index : current layer ,e.g -1
+
             if end > 0:
-                end = end - index
+                end = end - index # e.g -18 , means that,we connect previous floor and the first 18 floors
+
             route = EmptyLayer() # just a virtual layer ,do not anything but need a position
+
             module.add_module("route_{0}".format(index), route)
+
             # here just  updated the  channel num , the real operation write in the main forward
             if end < 0:
                 filters = output_filters[index + start] + output_filters[index + end]
@@ -175,14 +179,14 @@ def create_modules(blocks):
         #Yolo is the detection layer
         elif x["type"] == "yolo":
             mask = x["mask"].split(",") # get which anchor size used
-            mask = [int(x) for x in mask]
+            mask = [int(x) for x in mask] # e.g 3,4,5
 
             anchors = x["anchors"].split(",") # w,h of anchor
             anchors = [int(a) for a in anchors]
-            anchors = [(anchors[i], anchors[i+1]) for i in range(0, len(anchors),2)]
+            anchors = [(anchors[i], anchors[i+1]) for i in range(0, len(anchors),2)] # anchor size
             anchors = [anchors[i] for i in mask] # get which anchor size used
 
-            detection = DetectionLayer(anchors)
+            detection = DetectionLayer(anchors) # a empty model ,just for position
             module.add_module("Detection_{}".format(index), detection)
 
         module_list.append(module)
@@ -199,7 +203,9 @@ def create_modules(blocks):
 class Darknet(nn.Module):
     def __init__(self, cfgfile):
         super(Darknet, self).__init__()
-        self.blocks = parse_cfg(cfgfile) # get net info : [{info of a block },...]
+        self.blocks = parse_cfg(cfgfile)
+        # get net info : [{info of a block },...]
+
         self.net_info, self.module_list =   \
             create_modules(self.blocks) # get layer of model
 
@@ -208,7 +214,7 @@ class Darknet(nn.Module):
         # [0] is the net info (some parameter )
         # [{info of a block},{'type': 'convolutional','filter' : '3' ...} ...]
 
-        outputs = {}   #We cache the outputs for the route layer
+        outputs = {}   # We cache the outputs for the route layer
         write = 0  # indicator that
 
         for i, module in enumerate(modules):
@@ -263,11 +269,12 @@ class Darknet(nn.Module):
                 x = x.data # calculate from conv_output_layer
                 """
                     well,how to process the output ?
-                    the data is a convolutional output (e.g 13*13*[5 + 80] )that contains the bounding box 
-                    attributes along the depth of the feature map. The attributes bounding boxes 
-                    predicted by a cell are stacked one by one along each other. 
+                    the data is a convolutional output (e.g 13*13*[5 + 80] = 13*13*255 )
+                    that contains the bounding box  attributes along the depth of the feature map. 
+                    The attributes bounding boxes predicted by a cell are stacked one by one along each other. 
                     So, if you have to access the second bounding of cell at (5,6),
-                    then you will have to index it by map[5,6, (5+C): 2*(5+C)]. 
+                    then you will have to index it by map[5,6, (5+C): 2*(5+C)]. (总共3个box,这是第2个)
+                    
                     This form is very inconvenient for output processing 
                     such as thresholding by a object confidence, 
                     adding grid offsets to centers, applying anchors etc.
@@ -424,12 +431,13 @@ def random_test():
 
 def pretrain_test():
 
-    model = Darknet("yolov3.cfg")
+    model = Darknet("cfg/yolov3.cfg")
     model.load_weights("yolov3.weights")
     inp = get_test_input()
     pred = model(inp, torch.cuda.is_available())
     print(pred)
     print(pred.shape)
+    # the output shape is torch.Size([1, 10647, 85]) where 10647 = (13^2+26^2+52^2)*3
 
 if __name__ == '__main__':
     # random_test() # the weight are  random

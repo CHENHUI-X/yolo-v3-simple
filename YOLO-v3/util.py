@@ -9,12 +9,14 @@ import cv2
 def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
         '''
 
-        :param prediction:   prediction is a tensor feature map : ( N , (5+num of class) , W , H) for predict :
+        :param prediction:
+                prediction is a tensor feature(out) map with shape (N , C , W , H)
+                where C = 255 for class num = 80 ,means that 3 * ( x,y,w,h,conf, 80 class)
 
         :param inp_dim:
-        :param anchors: width : height - 10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326
+        :param anchors: width , height - 10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326
 
-        :param num_classes:
+        :param num_classes: 80
         :param CUDA:
         :return:a 2-D tensor, where each row of the tensor corresponds to
                 attributes of a bounding box(same level feature map),
@@ -63,12 +65,13 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
         # then transform it to a column
         prediction = prediction.transpose(1, 2).contiguous()
         # https://stackoverflow.com/questions/48915810/pytorch-what-does-contiguous-do
-        # now  the prediction is ( batchsize , num of tensor, dim of tensor  )
+        # now  the prediction is ( batchsize , num of tensor, dim of tensor which is 3 * 85  )
 
         # then extract  the box num
-        # now the output is have a tensor , shape:
-        # ( cell*cell*3 ( 3 for difference level map ) ,  ( 5 + num of class ) )
+
         prediction = prediction.view(batch_size, grid_size * grid_size * num_anchors, bbox_attrs)
+        # now the output is have a tensor , shape:
+        # ( batchsize , num of tensor * 3,  85)
         '''
         but how it make the prediction compatible the original data , 
         how to ensure that when the original 100*9 becomes 300*3,
@@ -78,7 +81,6 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
         be "connected" in storage, so that the current 3 consecutive rows 
         are the previous 1 row
         '''
-
 
         # Sigmoid the x,y coordinates and the objectness score.
         # Sigmoid the  centre_X, centre_Y. and object confidencce

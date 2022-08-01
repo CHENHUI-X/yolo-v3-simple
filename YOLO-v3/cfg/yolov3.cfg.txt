@@ -1144,7 +1144,7 @@ stride=1
 pad=1
 filters=255
 activation=linear
-# output = 52 *52 *255
+# output = 52 * 52 * 255
 # --------------------------------
 [yolo]
 mask = 0,1,2
