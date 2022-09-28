@@ -329,7 +329,7 @@ class Darknet(nn.Module):
         self.header = torch.from_numpy(header)
         self.seen = self.header[3]
 
-        #The weights are stored as float32 or 32-bit floats.
+        # The weights are stored as float32 or 32-bit floats.
         # Let's load rest of the weights in a np.ndarray.
         # current pointed have position at 5
         weights = np.fromfile(fp, dtype=np.float32)
@@ -352,8 +352,7 @@ class Darknet(nn.Module):
                 # the model sequential  is : conv -> normal -> active function
                 conv = model[0]
 
-
-                if (batch_normalize):
+                if batch_normalize:
                     # the model sequential  is : conv -> normal -> active function
                     bn = model[1] # batch normal layer
 
@@ -374,6 +373,8 @@ class Darknet(nn.Module):
                     ptr += num_bn_biases
 
                     # Cast the loaded weights into dims of model weights.
+                    # print( i ,module_type ,batch_normalize, bn ,bn.bias.shape , bn_biases.shape ,num_bn_biases)
+                    
                     bn_biases = bn_biases.view_as(bn.bias.data) # resize
                     bn_weights = bn_weights.view_as(bn.weight.data)
                     bn_running_mean = bn_running_mean.view_as(bn.running_mean)

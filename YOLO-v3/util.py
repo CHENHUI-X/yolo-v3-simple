@@ -105,7 +105,7 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
         # view(-1,2) -> ( 3*M,2) ,
         # unsqueeze(0) : add a dimension for index = 0 to adapt dimension  of prediction
         '''
-            now x_y_offset like :
+            now x_y_offset with shape ( num of anchors  * 3 ,  2 )like :
                [[[0., 0.],# 1st box at(0,0)
                  [0., 0.],# 2nd box at(0,0)
                  [0., 0.],# 3rd box at(0,0)
@@ -188,7 +188,7 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
 
 def write_results(prediction, confidence, num_classes, nms_conf=0.4):
         '''
-        The functions takes as as input the prediction,
+        The functions take the prediction as  input
         confidence (objectness score threshold),
         num_classes (80, in our case) and nms_conf (the NMS IoU threshold).
         '''
@@ -270,6 +270,7 @@ def write_results(prediction, confidence, num_classes, nms_conf=0.4):
 
                 try:
                         image_pred_ = image_pred[non_zero_ind.squeeze(), :].view(-1, 7)
+                        # 7 is dim with
                         # tensor([box_left ,box_top,box_right,box_down,box_conf,max_class_score,max_class_score_index])
                         # the num of rows is that number of  no zero box conf
                 except:
@@ -324,6 +325,7 @@ def write_results(prediction, confidence, num_classes, nms_conf=0.4):
                                 image_pred_class[i + 1:] *= iou_mask
                                 # remain the have little IOU about current box, others are
                                 # remove because of they overlap too much with the current box
+                                #     最后只有互相IOU都小于阈值的框才能保留下来
 
                                 # get the non-zero entries
                                 non_zero_ind = torch.nonzero(image_pred_class[:, 4]).squeeze()
@@ -332,6 +334,7 @@ def write_results(prediction, confidence, num_classes, nms_conf=0.4):
 
                                 batch_ind = image_pred_class.new(image_pred_class.size(0), 1).fill_(ind)
                                 # Repeat the batch_id for as many detections of the class cls in the image
+                                # 这个batch的第ind张图片，第cls个类的那些框
                                 #                          *****NOTICES******
                                 # The batch_ind indicator the predict is belong which image in current batch
                                 #  --------------------JUST  IN CURRENT BATCH---------------------
@@ -415,6 +418,7 @@ def  letterbox_image(img, inp_dim):
         # canvas = np.full((inp_dim[1], inp_dim[0], 3), 128) # 创建一个 inputdim*inputdim 全128的image
 
         canvas = np.full((inp_dim, inp_dim, 3), 128)  # 创建一个 inputdim*inputdim 全128的image
+        # 然后把reized_image 填充到这个inputdim*inputdim图片中
         canvas[(h - new_h) // 2:(h - new_h) // 2 + new_h, (w - new_w) // 2:(w - new_w) // 2 + new_w, :] = resized_image
 
         # set the resized image on center of convas , others position are 128

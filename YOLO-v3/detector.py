@@ -31,7 +31,7 @@ def arg_parse():
                       default="det", type=str)
   parser.add_argument("--bs", dest="bs", help="Batch size", default=1)
   parser.add_argument("--confidence", dest="confidence", help="Object Confidence to filter predictions", default=0.5)
-  parser.add_argument("--nms_thresh", dest="nms_thresh", help="NMS Threshhold", default=0.4)
+  parser.add_argument("--nms_thresh", dest="nms_thresh", help="NMS Threshhold", default=0.1)
   parser.add_argument("--cfg", dest='cfgfile', help=
   "Config file",
                       default="cfg/yolov3.cfg", type=str)
@@ -291,6 +291,7 @@ boundaries of the area on the padded image that contains the original image.
 
 # get of image original shape
 im_dim_list = torch.index_select(im_dim_list, 0, output[:,0].long())
+
 # calculate scaling factor for all inmage
 scaling_factor = torch.min(inp_dim/im_dim_list,1)[0].view(-1,1)
 
@@ -308,7 +309,7 @@ output[:,[2,4]] -= (inp_dim - scaling_factor*im_dim_list[:,1].view(-1,1))/2
 假设这里预测有一个框，由于传入CNN的是经过 padding 的image，那么
 prediction 的框的对角坐标 ，是对应到padding image 的，因此真实的
 框对角坐标，需要将现有坐标减去左边界和上边界即可
-(因为之前保证了图片在convas的正中心)
+(因为之前letterbox_image 函数 保证了图片在convas的正中心)
 
 '''
 output[:,1:5] /= scaling_factor
