@@ -90,6 +90,7 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
 
         # Add the center offsets
         grid = np.arange(grid_size)
+
         a, b = np.meshgrid(grid, grid)
 
         x_offset = torch.FloatTensor(a).view(-1, 1)
